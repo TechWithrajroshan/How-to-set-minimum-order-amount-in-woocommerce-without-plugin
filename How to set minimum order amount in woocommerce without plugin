@@ -73,3 +73,141 @@ function custom_found_customer_details( $customer_data ) {
     return $customer_data;
 }
 
+
+
+
+
+
+
+
+
+
+
+*// Explanation of this code//*
+
+
+
+
+
+
+
+
+The provided code snippet is a set of custom WooCommerce filters and functions that add and handle a "GST number" field within the WooCommerce billing and order process. This customization integrates a GST number into various parts of the checkout and order management process. Here’s a breakdown of each section of the code:
+
+   1  Adding GST Number to Billing Fields:
+
+
+add_filter('woocommerce_billing_fields' , 'display_billing_gst_fields');
+function display_billing_gst_fields($billing_fields){
+    $billing_fields['billing_gst_no'] = array(
+        'type' => 'text',
+        'label' =>  __('GST number',  'woocommerce' ),
+        'class' => array('form-row-wide'),
+        'required' => false,
+        'clear' => true,
+        'priority' => 35, // To change the field location increase or decrease this value
+    );
+
+    return $billing_fields;
+}
+
+
+
+
+This filter adds a new field for the GST number (billing_gst_no) to the WooCommerce billing fields during checkout. The field is labeled "GST number," is a text input, and is not required.
+
+
+
+2 Including GST Number in Formatted Billing Address:
+
+add_filter( 'woocommerce_order_formatted_billing_address', 'custom_add_gst_formatted_billing_address', 10, 2 );
+function custom_add_gst_formatted_billing_address( $fields, $WC_Order  ) {
+    $fields['gst_no'] = $WC_Order->billing_gst_no;
+
+    return $fields;
+}
+
+
+This filter ensures that the GST number is included when WooCommerce formats the billing address for display, adding it to the $fields array.
+
+
+3  Formatting Address Replacements:
+
+
+add_filter( 'woocommerce_formatted_address_replacements', 'custom_formatted_address_replacements', 10, 2 );
+function custom_formatted_address_replacements( $replacements, $args  ) {
+    $replacements['{gst_no}'] = ! empty($args['gst_no']) ? $args['gst_no'] : '';
+    $replacements['{gst_no_upper}'] = ! empty($args['gst_no']) ? strtoupper($args['gst_no']) : '';
+
+    return $replacements;
+}
+
+
+This filter defines how placeholders {gst_no} and {gst_no_upper} are replaced in address formats, allowing for the inclusion of the GST number in either its original form or uppercase.
+
+
+4 Updating Localisation Address Formats:
+
+
+add_filter( 'woocommerce_localisation_address_formats', 'custom_localisation_address_format' );
+function custom_localisation_address_format( $formats ) {
+    foreach($formats as $country => $string_address ) {
+        $formats[$country] = str_replace('{company}', "{company}\n{gst_no_upper}", $string_address);
+    }
+    return $formats;
+}
+
+This filter updates the address formats for all countries, inserting the GST number in uppercase after the company name in the formatted address.
+
+
+5  Adding GST Number to Customer Meta Fields:
+
+
+add_filter( 'woocommerce_customer_meta_fields', 'custom_customer_meta_fields' );
+function custom_customer_meta_fields( $fields ) {
+    $fields['billing']['fields']['billing_gst_no'] = array(
+        'label'       => __( 'GST number', 'woocommerce' )
+    );
+
+    return $fields;
+}
+
+
+
+This filter adds the GST number field to the customer's meta fields, making it editable in the WooCommerce admin area for customer profiles.
+
+6 Displaying GST Number in Admin Billing Fields:
+
+
+add_filter( 'woocommerce_admin_billing_fields', 'custom_admin_billing_fields' );
+function custom_admin_billing_fields( $fields ) {
+    $fields['gst_no'] = array(
+        'label' => __( 'GST number', 'woocommerce' ),
+        'show'  => true
+    );
+
+    return $fields;
+}
+
+
+This filter ensures that the GST number field is visible in the billing section of the WooCommerce admin order page.
+
+7 Including GST Number in Found Customer Details:
+
+
+add_filter( 'woocommerce_found_customer_details', 'custom_found_customer_details' );
+function custom_found_customer_details( $customer_data ) {
+    $customer_data['billing_gst_no'] = get_user_meta( $_POST['user_id'], 'billing_gst_no', true );
+
+    return $customer_data;
+}
+
+
+
+This filter retrieves and includes the GST number in the details found when searching for a customer in the WooCommerce admin panel.
+
+
+Summary:
+Overall, these custom filters and functions add a GST number field to the WooCommerce checkout process, 
+display it in various areas of the WooCommerce admin, and format it correctly for inclusion in addresses.
+This customization ensures the GST number is properly handled and displayed throughout the WooCommerce workflow
